@@ -3,21 +3,81 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cover Snap</title>
+<title>Vice Cover Studio — GTA-style cover art maker</title>
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<main class="app">
-  <section class="controls">
-    <h1>Cover Snap</h1>
-    <p>A photo and a caption, made into a square cover.</p>
-    <label>Photo <input id="photo" type="file" accept="image/*"></label>
-    <label>Caption <input id="caption" type="text" maxlength="40" value="Sunset Heist"></label>
-    <button id="export" type="button">Export PNG 1080 x 1080</button>
-    <p id="status" role="status"></p>
-  </section>
-  <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
-</main>
+<div class="app">
+  <header>
+    <h1>Vice <span>Cover</span> Studio</h1>
+    <p>Your photos, turned into a multi-panel poster cover.</p>
+    <p class="steps"><b>1</b> Pick photos &nbsp;·&nbsp; <b>2</b> Arrange the panels &nbsp;·&nbsp; <b>3</b> Export a PNG</p>
+  </header>
+  <div class="layout">
+    <section class="controls" aria-label="Cover controls">
+      <div class="card">
+        <h2>Photos</h2>
+        <label class="field">Add photos from your machine
+          <input id="photo" type="file" accept="image/*" multiple>
+        </label>
+        <div class="thumbs" id="thumbs" aria-label="Loaded photos"></div>
+        <p class="hint">Photos are read on your machine and never uploaded. Click a thumbnail to put that photo in the selected panel.</p>
+        <div class="row" style="margin-top:10px">
+          <button id="use-everywhere" type="button" class="small">Use selected photo in every panel</button>
+          <button id="try-samples" type="button" class="small">Load the two samples</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Caption</h2>
+        <label class="field">Title
+          <input id="title" type="text" maxlength="28" value="Sunset Heist">
+        </label>
+        <label class="field">Subtitle
+          <input id="subtitle" type="text" maxlength="40" value="One last score">
+        </label>
+      </div>
+
+      <div class="card">
+        <h2>Layout</h2>
+        <div class="row" id="layouts" role="group" aria-label="Panel layout"></div>
+        <p class="hint">Click a panel in the preview to select it, then crop and position its photo below.</p>
+      </div>
+
+      <div class="card">
+        <h2>Selected panel</h2>
+        <p class="hint" id="panel-label" style="margin:0 0 10px">Panel 1 of 3</p>
+        <div class="slider-row"><span>Zoom</span><input id="zoom" type="range" min="1" max="3.5" step="0.05" value="1"><output id="zoom-out">1.00×</output></div>
+        <div class="slider-row"><span>Left–right</span><input id="pan-x" type="range" min="-0.5" max="0.5" step="0.01" value="0"><output id="pan-x-out">0</output></div>
+        <div class="slider-row"><span>Up–down</span><input id="pan-y" type="range" min="-0.5" max="0.5" step="0.01" value="0"><output id="pan-y-out">0</output></div>
+        <div class="row">
+          <button id="center-photo" type="button" class="small">Centre photo</button>
+          <button id="cycle-photo" type="button" class="small">Next photo in this panel</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Colour grade</h2>
+        <div class="row" id="grades" role="group" aria-label="Colour grade"></div>
+      </div>
+
+      <div class="card">
+        <h2>Export PNG</h2>
+        <div class="export-grid">
+          <button id="export-square" type="button" class="primary">1080 × 1080</button>
+          <button id="export-portrait" type="button" class="primary">1080 × 1350</button>
+          <button id="export-wide" type="button" class="primary">1920 × 1080</button>
+        </div>
+        <p id="status" role="status"></p>
+      </div>
+    </section>
+
+    <section class="preview" aria-label="Live preview">
+      <div class="stage"><canvas id="cover" width="960" height="540" aria-label="Live cover preview"></canvas></div>
+      <p class="hint"><b>Click a panel</b> to select it · <b>drag</b> to move its photo · <b>scroll</b> to zoom · live preview, no upload.</p>
+    </section>
+  </div>
+</div>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>

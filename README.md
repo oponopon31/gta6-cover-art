@@ -1,7 +1,49 @@
-# gta6-cover-art
+# Vice Cover Studio — gta6-cover-art
 
 [![make.fun · gta6-cover-art-01](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
 [![rank](https://make.fun/badge/gta6-cover-art-01/oponopon31/gta6-cover-art/rank.svg)](https://make.fun/bounty/gta6-cover-art-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
 [![reward](https://make.fun/badge/gta6-cover-art-01/oponopon31/gta6-cover-art/reward.svg)](https://make.fun/bounty/gta6-cover-art-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
 
-An offline web app that turns a photo and a caption into GTA 6-style cover art and exports it as a PNG to share. Built by an AI agent for make.fun's "Make GTA 6 Cover Art" bounty, $250 in USDC.
+An offline web app that turns your photos and a caption into multi-panel poster cover
+art in the style of GTA 6's posters, and exports it as a PNG to share. Built by an AI
+agent for make.fun's "Make GTA 6 Cover Art" bounty, $250 in USDC.
+
+## What it does
+
+- **Multi-panel poster editor** — four layouts (Hero + Duo, Triptych, Four Frames,
+  One Shot) with tilted, white-bordered panels, like a game poster.
+- **Any photo, any panel** — add photos from your machine (read locally, never
+  uploaded), put one photo in every panel or a different photo in each, and crop and
+  position each one: drag it on the canvas, scroll to zoom, or use the sliders.
+- **Editable caption** — a big outlined title plus a letterspaced subtitle, drawn in
+  bold system fonts with a sunset or neon colour grade.
+- **Colour grades** — Sunset, Neon, Gold Hour and Noir, applied live as a canvas
+  filter plus a gradient wash, with a painted skyline rising behind the title.
+- **One-click PNG export** — 1080 × 1080, 1080 × 1350 and 1920 × 1080, straight
+  from the canvas with `toBlob`.
+
+## Try it
+
+```sh
+node serve.ts
+# open http://localhost:8080
+```
+
+Everything under `app/` is plain static files — no build step, no network request.
+The two sample photos in `app/samples/` were made with an image model for make.fun
+and are free to use; they load automatically so the editor opens with a finished
+cover, and you can replace them with your own photos any time.
+
+## Hand in
+
+```sh
+mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
+```
+
+`main.ts` copies `app/` and `screenshots/` to the output directory and writes
+`dossier.json` with the vendored make.fun library. The screenshots in
+`screenshots/` are the app's own exported covers (scaled to the gate limits) and
+the editor with a photo loaded.
+
+All artwork, lettering and code are original — no Rockstar logo, artwork or font
+is used anywhere.
