@@ -4,71 +4,48 @@
 
 # Vice Cover Studio — GTA 6 Cover Art Maker
 
-Make a GTA-style multi-panel cover in about a minute, entirely in your
-browser. Pick a layout, give each panel a photo, crop it with a preset or
-by dragging, choose a colour grade, type a caption, and export a PNG.
-Your photos never leave the page — there is no server and no upload.
+A photo and a caption, made into a cinema-poster GTA 6 cover — entirely in your
+browser, 100% offline, no upload. Pick a layout, crop each panel, choose a grade,
+and export a PNG in 1080 × 1080, 1080 × 1350 or 1920 × 1080 with one click.
 
-[Enter the bounty on make.fun](https://make.fun/bounty/gta6-cover-art-01)
+## What it does
+
+- **9 layouts** — Vice (hero + 2 stacked), Trio, Duo, Hero 6 (big hero + 5 small),
+  Quad, Strip, Cross, Tilt (scattered snapshots) and Grid 9. Every panel has its
+  own explicit crop, so no two panels show the same photo the same way.
+- **Cinema-poster finish** — a huge gradient title (never cut off, hard shadow +
+  thick outline), a halftone band behind it, a film billing block, a circular
+  LEONIDA seal, annotation callouts with leader lines, a sunset sky with sun glow,
+  a skyline with lit windows, palm silhouettes, grain and a vignette.
+- **5 grades** — Sunset, Neon, Vice, Golden and Dusk (indigo → orange).
+- **Any photo** — two sample photos built in, or upload your own (FileReader, kept
+  on your machine). Per-panel crop: zoom 1–2.2, pan ±0.9, Face / Detail / Wide
+  presets. Click a panel to select it, drag it to pan.
+- **Fast** — undo/redo, live preview, one-click PNG export in all three post sizes.
 
 ## Run it
 
 ```sh
-node serve.ts
-# open http://localhost:8080
+node serve.ts        # app/ on http://localhost:8080
 ```
 
-Or open `app/index.html` straight from the folder — it is plain static
-files (ES modules, no libraries, no network requests).
-
-## What it does
-
-- **Multi-panel covers** — three layouts (Vice, Trio, Duo). Every panel
-  has its own explicit crop, so no two panels show the same framing.
-- **Crop and position** — presets Face / Detail / Wide, zoom and pan
-  sliders (±0.9, wide enough to pull a face into a 2:1 panel), or drag
-  the photo inside the frame. Click a panel to select it.
-- **Five colour grades** — Sunset, Neon, Palm, Vice, and the new Dusk
-  (indigo sky melting into orange), each with its own sky, sun glow and
-  photo tint.
-- **Bold lettering that never clips** — the title size is bounded by the
-  band's width *and* height, with a hard shadow and a thick outline, on
-  a baseline at 0.945 of the cover height. The studio credit sits below
-  it, clear of every frame.
-- **Sunset world around the panels** — glowing sun, a skyline with lit
-  windows, and palm silhouettes framing the cover.
-- **One-click PNG export** — 1080×1080, 1080×1350, or 1920×1080. One
-  click — the PNG downloads at once.
-- **100% offline · no upload** — photos are read with FileReader and
-  stay in the browser. Two sample photos ship in `app/samples/`.
-
-## Build the hand-in
+## Hand it in
 
 ```sh
 mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 ```
 
-That copies `app/` and `screenshots/` to `out/` and writes
-`out/dossier.json`, the summary the judge reads.
+`main.ts` copies `app/` and `screenshots/` to the output directory and writes
+`dossier.json` with the vendored make.fun library (`vendor/makefun-app.ts`).
 
 ## Screenshots
 
-| File | Scene |
-| --- | --- |
-| `screenshots/1-cover.jpg` | Best exported cover, landscape (Sunset, Vice layout) |
-| `screenshots/2-editor.jpg` | The editor with a photo loaded, export card visible |
-| `screenshots/3-cover-portrait.jpg` | Portrait cover, neon Trio layout |
-| `screenshots/4-cover-square.jpg` | Square cover, Dusk grade, Duo layout |
+1. `1-cover.jpg` — the best exported cover (landscape, Hero 6, Sunset).
+2. `2-editor.jpg` — the editor with a photo loaded, panels and controls.
+3. `3-cover-portrait.jpg` — a portrait cover (Trio, Neon).
+4. `4-cover-square.jpg` — a square cover (Quad, Dusk).
 
-## Files
+## Honesty
 
-- `app/index.html` — editor page
-- `app/style.css` — sunset / neon theme
-- `app/src/cover.js` — pure canvas renderer (sky, panels, title)
-- `app/src/main.js` — editor wiring (controls, drag, export)
-- `app/src/shots.js` — fixed screenshot scenes from `?shot=`
-- `shots.json` — the four screenshot scenes and sizes
-- `main.ts` — builds `dossier.json` for the grader
-
-No Rockstar logos, wordmarks, artwork or fonts are used anywhere —
-the lettering is a system font stack with outline and shadow.
+All art, lettering and photos are our own or free to use (the two sample photos
+were made for make.fun). No Rockstar Games logo, artwork or font anywhere.

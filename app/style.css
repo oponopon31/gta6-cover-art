@@ -1,173 +1,69 @@
-/* Vice Cover Studio — sunset / neon editor theme. Dark glass cards on a
-   deep violet page, warm orange accents, compact so the whole editor fits
-   one screen. */
-
 * { box-sizing: border-box; }
-
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
+  background: #160a26;
   color: #f5eefc;
-  background: linear-gradient(180deg, #160a2e 0%, #241040 55%, #160a2e 100%);
-  min-height: 100vh;
 }
-
+.app { max-width: 1240px; margin: 0 auto; padding: 14px 18px 28px; }
 .top {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  flex-wrap: wrap;
-  padding: 14px 22px 10px;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  margin-bottom: 10px;
 }
-
-.brand {
-  font-family: "Arial Black", Impact, sans-serif;
-  font-size: 26px;
-  letter-spacing: 2px;
-  color: #fff;
-  text-shadow: 3px 3px 0 #ff7e5f, 6px 6px 0 rgba(0, 0, 0, 0.45);
-}
-
-.tag { color: #d9c8f5; font-size: 14px; }
-
+h1 { margin: 0; font-size: 26px; letter-spacing: 0.5px; }
+.tag { margin: 4px 0 0; color: #c9a8e8; font-size: 13px; }
 .badge {
-  margin-left: auto;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  color: #0d0618;
-  background: linear-gradient(90deg, #ffd76a, #ff9a3d);
-  border-radius: 999px;
-  padding: 5px 12px;
-  white-space: nowrap;
+  flex: none; font-size: 12px; font-weight: bold; color: #160a26;
+  background: #ffd166; border-radius: 999px; padding: 6px 12px; white-space: nowrap;
 }
-
-.wrap {
-  display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr);
-  gap: 16px;
-  padding: 4px 22px 10px;
-  align-items: start;
+.stage { margin-bottom: 12px; }
+#cover {
+  display: block; width: 100%; max-width: 960px; height: auto;
+  border: 2px solid rgba(255,255,255,0.35); border-radius: 6px;
+  background: #2b1838; cursor: crosshair;
 }
-
-.stage-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 14px;
-  padding: 12px;
+.hint { margin: 6px 0 0; color: #c9a8e8; font-size: 12px; }
+.controls {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
 }
-
-#stage {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 8px;
-  cursor: grab;
-  touch-action: none;
-  background: #241536;
-}
-
-#stage:active { cursor: grabbing; }
-
-.panel-tabs, .photo-row, .btn-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
-
-.chip {
-  font: 700 13px Arial, Helvetica, sans-serif;
-  color: #f5eefc;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 999px;
-  padding: 7px 13px;
-  cursor: pointer;
-}
-
-.chip:hover { background: rgba(255, 255, 255, 0.16); }
-
-.chip.active {
-  color: #0d0618;
-  background: linear-gradient(90deg, #ffd76a, #ff7e5f);
-  border-color: transparent;
-}
-
-.export-btn {
-  background: linear-gradient(90deg, #ff2e88, #ff7e5f);
-  border-color: transparent;
-  color: #fff;
-}
-
-.controls { display: grid; gap: 12px; }
-
 .card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 14px;
-  padding: 12px 14px;
+  background: #241640; border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 8px; padding: 10px 12px;
 }
-
-.card h2 {
-  margin: 0 0 8px;
-  font-size: 13px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: #ffd76a;
+.card h2 { margin: 0 0 8px; font-size: 14px; }
+.card h2 .sel { float: right; font-size: 11px; color: #c9a8e8; font-weight: normal; }
+.card label { display: block; font-size: 12px; margin: 6px 0; }
+.card input[type="text"] {
+  width: 100%; margin-top: 3px; padding: 6px 8px; font-size: 14px;
+  border: 1px solid rgba(255,255,255,0.3); border-radius: 4px;
+  background: #160a26; color: #fff;
 }
-
-.card .btn-row { margin-top: 0; }
-
-.hint { margin: 8px 0 0; font-size: 12px; line-height: 1.45; color: #b9a8d9; }
-
-.slider {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 2px 10px;
-  margin-top: 10px;
-  font-size: 13px;
-  color: #e6dbf7;
+.card input[type="range"] { width: 100%; vertical-align: middle; }
+.note { margin: 4px 0; color: #c9a8e8; font-size: 11px; }
+.row { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+button, .upload {
+  font-size: 12px; padding: 6px 10px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.35); border-radius: 5px;
+  background: #3a2361; color: #fff;
 }
-
-.slider span { font-variant-numeric: tabular-nums; color: #ffd76a; }
-
-.slider input[type="range"] { grid-column: 1 / -1; width: 100%; accent-color: #ff7e5f; }
-
-#caption {
-  width: 100%;
-  font: 700 16px Arial, Helvetica, sans-serif;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 8px;
-  padding: 9px 11px;
-}
-
-#caption:focus { outline: 2px solid #ff7e5f; outline-offset: 1px; }
-
-.foot {
-  padding: 6px 22px 18px;
-  font-size: 12px;
-  color: #8f7cb5;
-}
-
-/* Screenshot mode: the cover fills the whole viewport, no editor chrome. */
+button:hover, .upload:hover { background: #4a2d7d; }
+button.active { background: #ff5e62; border-color: #ff5e62; }
+button:disabled { opacity: 0.4; cursor: default; }
+.upload input { display: none; }
+.grid9 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.grades { display: flex; gap: 6px; flex-wrap: wrap; }
+.grades button { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.7); }
+.grades button.active { outline: 3px solid #fff; outline-offset: 1px; }
+.check { display: block; font-size: 13px; margin: 6px 0; }
+.export { border-color: #ffd166; }
+#status { margin: 6px 0 0; font-size: 12px; color: #ffd166; min-height: 15px; }
+/* Cover-only shot: the canvas fills the whole viewport, controls hidden. */
 body.shot-cover { background: #000; }
-body.shot-cover .top,
-body.shot-cover .panel-tabs,
-body.shot-cover .photo-row,
-body.shot-cover .hint,
-body.shot-cover .controls,
-body.shot-cover .foot { display: none; }
-body.shot-cover .wrap { display: block; padding: 0; }
-body.shot-cover .stage-card { background: none; border: 0; border-radius: 0; padding: 0; }
-body.shot-cover #stage { width: 100vw; height: 100vh; border-radius: 0; cursor: default; }
-
-@media (max-width: 860px) {
-  .wrap { grid-template-columns: 1fr; }
-  .badge { margin-left: 0; }
+body.shot-cover .app { max-width: none; padding: 0; }
+body.shot-cover .top, body.shot-cover .controls, body.shot-cover .hint { display: none; }
+body.shot-cover .stage { margin: 0; }
+body.shot-cover #cover {
+  width: 100vw; height: 100vh; max-width: none;
+  border: 0; border-radius: 0;
 }
+@media (max-width: 900px) { .controls { grid-template-columns: 1fr 1fr; } }

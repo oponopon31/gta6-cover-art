@@ -4,72 +4,80 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vice Cover Studio — GTA 6 Cover Art Maker</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<header class="top">
-  <div class="brand">VICE COVER STUDIO</div>
-  <div class="tag">Make a GTA 6 cover in one minute</div>
-  <span class="badge">100% offline · no upload</span>
-</header>
-
-<main class="wrap">
-  <section class="stage-card">
-    <canvas id="stage" width="960" height="540"></canvas>
-    <div class="panel-tabs" id="panelTabs"></div>
-    <div class="photo-row">
-      <button type="button" class="chip" id="usePier">Use pier photo</button>
-      <button type="button" class="chip" id="useBoulevard">Use boulevard photo</button>
-      <button type="button" class="chip" id="uploadBtn">Upload your photo…</button>
-      <input type="file" id="upload" accept="image/*" hidden>
+<main class="app">
+  <header class="top">
+    <div>
+      <h1>Vice Cover Studio</h1>
+      <p class="tag">A photo and a caption, made into a cinema-poster GTA 6 cover. 100% offline · no upload.</p>
     </div>
-    <p class="hint">Click a panel to select it · drag the photo to move it inside the frame</p>
+    <span class="badge">100% offline · no upload</span>
+  </header>
+
+  <section class="stage">
+    <canvas id="cover" width="960" height="540" aria-label="The cover preview"></canvas>
+    <p class="hint">Click a panel to select it, drag it to pan the photo. The dashed frame only shows in the editor — never on the exported cover.</p>
   </section>
 
-  <aside class="controls">
-    <section class="card">
-      <h2>Layout</h2>
-      <div class="btn-row" id="layoutBtns"></div>
-    </section>
-
-    <section class="card">
-      <h2>Grade</h2>
-      <div class="btn-row" id="gradeBtns"></div>
-      <p class="hint">Dusk is the new one — indigo sky melting into orange.</p>
-    </section>
-
-    <section class="card">
-      <h2>Crop the selected panel</h2>
-      <div class="btn-row" id="presetBtns"></div>
-      <label class="slider">Zoom <span id="zoomVal">1.15×</span>
-        <input type="range" id="zoom" min="1" max="2.2" step="0.05" value="1.15">
-      </label>
-      <label class="slider">Pan left–right <span id="panxVal">0.00</span>
-        <input type="range" id="panx" min="-0.9" max="0.9" step="0.05" value="0">
-      </label>
-      <label class="slider">Pan up–down <span id="panyVal">0.00</span>
-        <input type="range" id="pany" min="-0.9" max="0.9" step="0.05" value="0">
-      </label>
-    </section>
-
-    <section class="card">
+  <section class="controls">
+    <div class="card">
       <h2>Caption</h2>
-      <input type="text" id="caption" maxlength="24" value="SUNSET HEIST" spellcheck="false">
-      <p class="hint">Bold letters, always fully visible — the title can never run off the edge.</p>
-    </section>
+      <label>Title <input id="caption" type="text" maxlength="24" value="Sunset Heist"></label>
+      <p class="note">Huge gradient lettering, sized to fit — never cut off.</p>
+    </div>
 
-    <section class="card export" id="exportCard">
-      <h2>Export PNG</h2>
-      <div class="btn-row" id="exportBtns"></div>
-      <p class="hint">One click — the PNG downloads at once.</p>
-    </section>
-  </aside>
+    <div class="card">
+      <h2>Layout <span id="selpanel" class="sel">Panel 1 of 3</span></h2>
+      <div id="layouts" class="grid9"></div>
+    </div>
+
+    <div class="card">
+      <h2>Grade</h2>
+      <div id="grades" class="grades"></div>
+    </div>
+
+    <div class="card">
+      <h2>Photo for the selected panel</h2>
+      <div class="row">
+        <button type="button" data-photo="boulevard">Boulevard</button>
+        <button type="button" data-photo="pier">Pier</button>
+        <label class="upload">Upload <input id="upload" type="file" accept="image/*"></label>
+      </div>
+      <label>Zoom <input id="zoom" type="range" min="1" max="2.2" step="0.05" value="1.15"> <span id="zoomv">1.15×</span></label>
+      <label>Pan X <input id="panx" type="range" min="-0.9" max="0.9" step="0.05" value="0"></label>
+      <label>Pan Y <input id="pany" type="range" min="-0.9" max="0.9" step="0.05" value="0"></label>
+      <div class="row">
+        <button type="button" data-crop="face">Face</button>
+        <button type="button" data-crop="detail">Detail</button>
+        <button type="button" data-crop="wide">Wide</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Poster extras</h2>
+      <label class="check"><input id="toggle-seal" type="checkbox" checked> LEONIDA seal</label>
+      <label class="check"><input id="toggle-callouts" type="checkbox" checked> Callouts</label>
+      <label class="check"><input id="toggle-billing" type="checkbox" checked> Billing block</label>
+      <div class="row">
+        <button id="undo" type="button">Undo</button>
+        <button id="redo" type="button">Redo</button>
+      </div>
+    </div>
+
+    <div class="card export">
+      <h2>Export</h2>
+      <p class="note">One click — the PNG downloads at once.</p>
+      <div class="row">
+        <button type="button" data-export="1080x1080">Square 1080 × 1080</button>
+        <button type="button" data-export="1080x1350">Portrait 1080 × 1350</button>
+        <button type="button" data-export="1920x1080">Wide 1920 × 1080</button>
+      </div>
+      <p id="status" role="status"></p>
+    </div>
+  </section>
 </main>
-
-<footer class="foot">
-  Vice Cover Studio runs entirely in your browser. Your photos never leave this page.
-</footer>
-
-<script type="module" src="src/main.js"></script>
+<script type="module" src="./src/main.js"></script>
 </body>
 </html>
