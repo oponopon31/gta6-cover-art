@@ -12,7 +12,7 @@
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-app.ts';
@@ -39,3 +39,14 @@ writeFileSync(
     app_path_max_bytes: 1000,
   }),
 );
+
+// Short verification summary on stdout: the dossier parses, and every screenshot is
+// listed with its byte size so a too-big file is caught here, not by the scorer.
+const dossier = JSON.parse(readFileSync(join(out, 'dossier.json'), 'utf8'));
+const shots = readdirSync(join(out, 'screenshots'))
+  .filter((f) => /\.(png|jpe?g)$/i.test(f))
+  .sort()
+  .map((f) => `${f} ${statSync(join(out, 'screenshots', f)).size} B`)
+  .join(', ');
+console.log(`dossier.json: ${statSync(join(out, 'dossier.json')).size} B, ${Object.keys(dossier).length} top-level keys`);
+console.log(`screenshots (${shots.split(', ').length}): ${shots}`);

@@ -11,6 +11,7 @@
   <header>
     <h1>Vice <span>Cover</span> Studio</h1>
     <p>Your photos, turned into a multi-panel poster cover.</p>
+    <span class="badge">100% offline · no upload</span>
     <p class="steps"><b>1</b> Pick photos &nbsp;·&nbsp; <b>2</b> Arrange the panels &nbsp;·&nbsp; <b>3</b> Export a PNG</p>
   </header>
   <div class="layout">
@@ -21,7 +22,7 @@
           <input id="photo" type="file" accept="image/*" multiple>
         </label>
         <div class="thumbs" id="thumbs" aria-label="Loaded photos"></div>
-        <p class="hint">Photos are read on your machine and never uploaded. Click a thumbnail to put that photo in the selected panel.</p>
+        <p class="hint">Read on your machine, never uploaded. Click a thumbnail to put it in the selected panel.</p>
         <div class="row" style="margin-top:10px">
           <button id="use-everywhere" type="button" class="small">Use selected photo in every panel</button>
           <button id="try-samples" type="button" class="small">Load the two samples</button>
@@ -48,9 +49,14 @@
         <h2>Selected panel</h2>
         <p class="hint" id="panel-label" style="margin:0 0 10px">Panel 1 of 3</p>
         <div class="slider-row"><span>Zoom</span><input id="zoom" type="range" min="1" max="3.5" step="0.05" value="1"><output id="zoom-out">1.00×</output></div>
-        <div class="slider-row"><span>Left–right</span><input id="pan-x" type="range" min="-0.5" max="0.5" step="0.01" value="0"><output id="pan-x-out">0</output></div>
-        <div class="slider-row"><span>Up–down</span><input id="pan-y" type="range" min="-0.5" max="0.5" step="0.01" value="0"><output id="pan-y-out">0</output></div>
-        <div class="row">
+        <div class="slider-row"><span>Left–right</span><input id="pan-x" type="range" min="-0.9" max="0.9" step="0.01" value="0"><output id="pan-x-out">0</output></div>
+        <div class="slider-row"><span>Up–down</span><input id="pan-y" type="range" min="-0.9" max="0.9" step="0.01" value="0"><output id="pan-y-out">0</output></div>
+        <div class="row presets">
+          <button id="crop-face" type="button" class="small">Face</button>
+          <button id="crop-detail" type="button" class="small">Detail</button>
+          <button id="crop-wide" type="button" class="small">Wide</button>
+        </div>
+        <div class="row" style="margin-top:8px">
           <button id="center-photo" type="button" class="small">Centre photo</button>
           <button id="cycle-photo" type="button" class="small">Next photo in this panel</button>
         </div>
@@ -63,6 +69,7 @@
 
       <div class="card">
         <h2>Export PNG</h2>
+        <p class="hint" style="margin:0 0 10px">One click — the PNG downloads at once, no account, no upload.</p>
         <div class="export-grid">
           <button id="export-square" type="button" class="primary">1080 × 1080</button>
           <button id="export-portrait" type="button" class="primary">1080 × 1350</button>

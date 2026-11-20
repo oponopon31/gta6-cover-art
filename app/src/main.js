@@ -98,7 +98,9 @@ function renderThumbs() {
   thumbs.appendChild(add);
 }
 
-/** Sizes the preview canvas to the chosen export aspect and redraws the cover. */
+/** Sizes the preview canvas to the chosen export aspect and redraws the cover.
+ *  The preview marks the selected panel with a dashed frame; exports never do.
+ *  A `?shot=cover` scene is a cover, not the editor, so it never shows the frame. */
 export function redraw() {
   const size = SIZES[state.size];
   const maxSide = 960;
@@ -112,6 +114,8 @@ export function redraw() {
     grade: state.grade,
     title: state.title,
     subtitle: state.subtitle,
+    highlight: !document.body.classList.contains('shot-cover'),
+    selectedPanel: state.selectedPanel,
   });
   syncPanelControls();
 }
@@ -183,6 +187,26 @@ document.getElementById('cycle-photo').addEventListener('click', () => {
     redraw();
   }
 });
+
+/** One-tap crop presets for the selected panel: Face pans up toward a face in a
+ *  wide panel (a portrait photo's face sits near its top, so a wide panel needs a
+ *  large upward pan to show it), Detail turns the panel into a close-up, Wide
+ *  resets the crop. */
+const CROP_PRESETS = {
+  'crop-face': { zoom: 1.15, ox: 0, oy: 0.7 },
+  'crop-detail': { zoom: 2.0, ox: 0, oy: -0.05 },
+  'crop-wide': { zoom: 1, ox: 0, oy: 0 },
+};
+for (const [id, preset] of Object.entries(CROP_PRESETS)) {
+  document.getElementById(id).addEventListener('click', () => {
+    const panel = currentPanels()[state.selectedPanel];
+    panel.zoom = preset.zoom;
+    panel.ox = preset.ox;
+    panel.oy = preset.oy;
+    redraw();
+  });
+}
+
 document.getElementById('use-everywhere').addEventListener('click', () => {
   const photo = currentPanels()[state.selectedPanel].photo;
   for (const panel of currentPanels()) panel.photo = photo;
@@ -272,8 +296,8 @@ canvas.addEventListener('pointermove', (e) => {
   const { x, y } = canvasPoint(e);
   const rect = LAYOUTS[state.layout].panels[state.selectedPanel];
   const panel = currentPanels()[state.selectedPanel];
-  panel.ox = Math.max(-0.5, Math.min(0.5, dragging.ox + (x - dragging.x) / (rect.w * canvas.width)));
-  panel.oy = Math.max(-0.5, Math.min(0.5, dragging.oy + (y - dragging.y) / (rect.h * canvas.height)));
+  panel.ox = Math.max(-0.9, Math.min(0.9, dragging.ox + (x - dragging.x) / (rect.w * canvas.width)));
+  panel.oy = Math.max(-0.9, Math.min(0.9, dragging.oy + (y - dragging.y) / (rect.h * canvas.height)));
   redraw();
 });
 canvas.addEventListener('pointerup', () => { dragging = null; });
@@ -304,6 +328,21 @@ window.__viceCover = {
         scene.photoMap.forEach((photoName, i) => {
           const idx = state.photoNames.indexOf(photoName);
           if (idx >= 0 && panels[i]) panels[i].photo = idx;
+        });
+      }
+      if (scene.zooms) {
+        const panels = currentPanels();
+        scene.zooms.forEach((zoom, i) => {
+          if (panels[i] && Number.isFinite(zoom)) panels[i].zoom = zoom;
+        });
+      }
+      if (scene.pans) {
+        const panels = currentPanels();
+        scene.pans.forEach((pan, i) => {
+          if (panels[i] && pan) {
+            if (Number.isFinite(pan.ox)) panels[i].ox = pan.ox;
+            if (Number.isFinite(pan.oy)) panels[i].oy = pan.oy;
+          }
         });
       }
     }
