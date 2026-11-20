@@ -3,79 +3,64 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vice Cover Studio — GTA 6 Cover Art Maker</title>
+<title>Vice Cover Studio — GTA 6-style cover art maker</title>
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
+<header class="top">
+  <div class="brand">
+    <h1>VICE COVER STUDIO</h1>
+    <p class="sub">Your photos, turned into GTA 6-style key art — free, in the browser, no upload.</p>
+  </div>
+  <span class="offline-badge">100% offline · no upload</span>
+</header>
 <main class="app">
-  <header class="top">
-    <div>
-      <h1>Vice Cover Studio</h1>
-      <p class="tag">A photo and a caption, made into a cinema-poster GTA 6 cover. 100% offline · no upload.</p>
-    </div>
-    <span class="badge">100% offline · no upload</span>
-  </header>
-
-  <section class="stage">
-    <canvas id="cover" width="960" height="540" aria-label="The cover preview"></canvas>
-    <p class="hint">Click a panel to select it, drag it to pan the photo. The dashed frame only shows in the editor — never on the exported cover.</p>
-  </section>
-
-  <section class="controls">
+  <section class="panel" aria-label="Editor controls">
     <div class="card">
-      <h2>Caption</h2>
-      <label>Title <input id="caption" type="text" maxlength="24" value="Sunset Heist"></label>
-      <p class="note">Huge gradient lettering, sized to fit — never cut off.</p>
+      <h2>1 · Photo</h2>
+      <label class="file-label">Choose a photo
+        <input id="photo" type="file" accept="image/*">
+      </label>
+      <p class="hint">Or keep the sample. Click a panel on the cover to select it.</p>
     </div>
-
     <div class="card">
-      <h2>Layout <span id="selpanel" class="sel">Panel 1 of 3</span></h2>
-      <div id="layouts" class="grid9"></div>
+      <h2>2 · Words</h2>
+      <label>Title <input id="caption" type="text" maxlength="30" value="Sunset Heist"></label>
+      <label>Tagline <input id="tagline" type="text" maxlength="48" value="EVERY LEGEND HAS A PRICE"></label>
     </div>
-
     <div class="card">
-      <h2>Grade</h2>
-      <div id="grades" class="grades"></div>
+      <h2>3 · Layout</h2>
+      <div id="layouts" class="chips" role="group" aria-label="Layout"></div>
     </div>
-
     <div class="card">
-      <h2>Photo for the selected panel</h2>
-      <div class="row">
-        <button type="button" data-photo="boulevard">Boulevard</button>
-        <button type="button" data-photo="pier">Pier</button>
-        <label class="upload">Upload <input id="upload" type="file" accept="image/*"></label>
-      </div>
-      <label>Zoom <input id="zoom" type="range" min="1" max="2.2" step="0.05" value="1.15"> <span id="zoomv">1.15×</span></label>
+      <h2>4 · Grade</h2>
+      <div id="grades" class="chips" role="group" aria-label="Colour grade"></div>
+    </div>
+    <div class="card">
+      <h2>5 · Crop the selected panel</h2>
+      <div id="presets" class="chips" role="group" aria-label="Crop presets"></div>
       <label>Pan X <input id="panx" type="range" min="-0.9" max="0.9" step="0.05" value="0"></label>
       <label>Pan Y <input id="pany" type="range" min="-0.9" max="0.9" step="0.05" value="0"></label>
-      <div class="row">
-        <button type="button" data-crop="face">Face</button>
-        <button type="button" data-crop="detail">Detail</button>
-        <button type="button" data-crop="wide">Wide</button>
-      </div>
+      <label>Zoom <input id="zoom" type="range" min="1" max="2.4" step="0.05" value="1"></label>
     </div>
-
-    <div class="card">
-      <h2>Poster extras</h2>
-      <label class="check"><input id="toggle-seal" type="checkbox" checked> LEONIDA seal</label>
-      <label class="check"><input id="toggle-callouts" type="checkbox" checked> Callouts</label>
-      <label class="check"><input id="toggle-billing" type="checkbox" checked> Billing block</label>
-      <div class="row">
-        <button id="undo" type="button">Undo</button>
-        <button id="redo" type="button">Redo</button>
+    <div class="card export-card">
+      <h2>6 · Export</h2>
+      <div id="sizes" class="chips" role="group" aria-label="Export size"></div>
+      <div class="export-buttons">
+        <button id="export-square" type="button">Export Square PNG</button>
+        <button id="export-portrait" type="button">Export Portrait PNG</button>
+        <button id="export-wide" type="button">Export Wide PNG</button>
       </div>
-    </div>
-
-    <div class="card export">
-      <h2>Export</h2>
-      <p class="note">One click — the PNG downloads at once.</p>
-      <div class="row">
-        <button type="button" data-export="1080x1080">Square 1080 × 1080</button>
-        <button type="button" data-export="1080x1350">Portrait 1080 × 1350</button>
-        <button type="button" data-export="1920x1080">Wide 1920 × 1080</button>
+      <p class="hint">One click — the PNG downloads at once.</p>
+      <div class="undo-row">
+        <button id="undo" type="button" disabled>Undo</button>
+        <button id="redo" type="button" disabled>Redo</button>
       </div>
       <p id="status" role="status"></p>
     </div>
+  </section>
+  <section class="stage" aria-label="Cover preview">
+    <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
   </section>
 </main>
 <script type="module" src="./src/main.js"></script>
