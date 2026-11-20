@@ -1,378 +1,273 @@
-// Vice Cover Studio — the editor. Wires the page: photos from the machine (FileReader,
-// never uploaded), per-panel crop and position, layout and colour-grade pickers, an
-// editable caption, a live preview and one-click PNG export in three post sizes.
-// A `?shot=` query sets up a fixed scene for a screenshot instead (./shots.js).
-import { drawCover, hitPanel, LAYOUTS, GRADES, SIZES } from './cover.js';
-import { runShot } from './shots.js';
+// main.js — the Vice Cover Studio editor.
+// Wires the canvas renderer (cover.js) to the controls in index.html:
+// pick a panel, give it a photo (sample or your own upload), crop it with
+// presets or by dragging, choose a layout and a grade, type a caption,
+// export a PNG in one click. Everything runs locally — photos are read
+// with FileReader and never leave the browser.
 
-const canvas = document.getElementById('cover');
-const titleInput = document.getElementById('title');
-const subtitleInput = document.getElementById('subtitle');
-const status = document.getElementById('status');
-const thumbs = document.getElementById('thumbs');
-const panelLabel = document.getElementById('panel-label');
+import { drawCover, GRADES, LAYOUTS, PRESETS, layoutRects } from './cover.js';
+import { SAMPLE_SRC, applyShotParams, defaultState, positionForShot, readShotParams } from './shots.js';
 
-/** The whole editor state: photos are loaded Images, panels are per-layout so
- *  switching layouts keeps each layout's arrangement. */
-const state = {
-  photos: [],
-  photoNames: [],
-  layout: 'hero-duo',
-  grade: 'sunset',
-  size: '1920x1080',
-  title: 'Sunset Heist',
-  subtitle: 'One last score',
-  selectedPanel: 0,
-  panelsByLayout: {},
-};
+const PREVIEW_W = 960;
+const PREVIEW_H = 540;
 
-function defaultPanels(layoutId) {
-  const count = LAYOUTS[layoutId].panels.length;
-  const panels = [];
-  for (let i = 0; i < count; i++) {
-    panels.push({ photo: i === 0 ? 0 : 1, zoom: 1, ox: 0, oy: 0 });
-  }
-  return panels;
-}
+const EXPORT_SIZES = [
+  { label: '1080 × 1080', w: 1080, h: 1080 },
+  { label: '1080 × 1350', w: 1080, h: 1350 },
+  { label: '1920 × 1080', w: 1920, h: 1080 },
+];
 
-/** The panels of the current layout, creating defaults on first use. */
-export function currentPanels() {
-  if (!state.panelsByLayout[state.layout]) {
-    state.panelsByLayout[state.layout] = defaultPanels(state.layout);
-  }
-  return state.panelsByLayout[state.layout];
-}
+const params = readShotParams();
+const shotMode = params.mode === 'cover' ? 'cover' : params.mode === 'editor' ? 'editor' : '';
+const state = defaultState();
+if (shotMode) applyShotParams(state, params);
 
-/** Loads an image from a URL, resolving once it can be drawn. */
-export function loadImage(url) {
+const images = new Map(); // src key -> loaded HTMLImageElement
+let selected = 0;
+let dragging = null;
+
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+
+function loadPhoto(src) {
+  if (images.has(src)) return Promise.resolve(images.get(src));
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`could not load ${url}`));
-    img.src = url;
+    img.onload = () => {
+      images.set(src, img);
+      resolve(img);
+    };
+    img.onerror = () => reject(new Error(`could not load ${src}`));
+    img.src = SAMPLE_SRC[src] || src;
   });
 }
 
-/** Adds a loaded image as a photo, fixes panel indexes that pointed past it, and refreshes. */
-export function addPhoto(img, name) {
-  state.photos.push(img);
-  state.photoNames.push(name);
-  for (const panels of Object.values(state.panelsByLayout)) {
-    for (const panel of panels) {
-      if (panel.photo >= state.photos.length) panel.photo = state.photos.length - 1;
-    }
-  }
-  renderThumbs();
-  redraw();
+function stateImages() {
+  const out = {};
+  for (const [key, img] of images) out[key] = img;
+  return out;
 }
 
-async function loadSample(name) {
-  const img = await loadImage(`samples/${name}.jpg`);
-  addPhoto(img, name);
+function visiblePanels() {
+  return layoutRects(state.layout, PREVIEW_W, PREVIEW_H).length;
 }
 
-function renderThumbs() {
-  thumbs.innerHTML = '';
-  state.photos.forEach((img, i) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.setAttribute('aria-pressed', String(currentPanels()[state.selectedPanel]?.photo === i));
-    button.title = state.photoNames[i] || `Photo ${i + 1}`;
-    const thumb = document.createElement('img');
-    thumb.src = img.src;
-    thumb.alt = button.title;
-    button.appendChild(thumb);
-    button.addEventListener('click', () => {
-      currentPanels()[state.selectedPanel].photo = i;
-      renderThumbs();
-      redraw();
-    });
-    thumbs.appendChild(button);
-  });
-  const add = document.createElement('button');
-  add.type = 'button';
-  add.className = 'add';
-  add.textContent = '+';
-  add.title = 'Add more photos';
-  add.addEventListener('click', () => document.getElementById('photo').click());
-  thumbs.appendChild(add);
-}
-
-/** Sizes the preview canvas to the chosen export aspect and redraws the cover.
- *  The preview marks the selected panel with a dashed frame; exports never do.
- *  A `?shot=cover` scene is a cover, not the editor, so it never shows the frame. */
-export function redraw() {
-  const size = SIZES[state.size];
-  const maxSide = 960;
-  const scale = Math.min(maxSide / size.w, maxSide / size.h, 1);
-  canvas.width = Math.round(size.w * scale);
-  canvas.height = Math.round(size.h * scale);
-  drawCover(canvas, {
-    photos: state.photos,
-    panels: currentPanels(),
-    layout: state.layout,
-    grade: state.grade,
-    title: state.title,
-    subtitle: state.subtitle,
-    highlight: !document.body.classList.contains('shot-cover'),
-    selectedPanel: state.selectedPanel,
-  });
-  syncPanelControls();
-}
-
-function buildPicker(container, entries, current, onPick) {
-  container.innerHTML = '';
-  for (const [id, entry] of Object.entries(entries)) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = entry.name;
-    button.setAttribute('aria-pressed', String(id === current));
-    button.addEventListener('click', () => {
-      onPick(id);
-      buildPicker(container, entries, id, onPick);
-      redraw();
-    });
-    container.appendChild(button);
+function render() {
+  if (shotMode === 'cover') {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    drawCover(ctx, canvas.width, canvas.height, state, stateImages(), {});
+  } else {
+    canvas.width = PREVIEW_W;
+    canvas.height = PREVIEW_H;
+    drawCover(ctx, PREVIEW_W, PREVIEW_H, state, stateImages(), { editor: true, selected });
   }
 }
 
-buildPicker(document.getElementById('layouts'), LAYOUTS, state.layout, (id) => {
+async function renderWhenReady() {
+  const needed = new Set(state.panels.map((p) => p.src));
+  await Promise.all([...needed].map((s) => loadPhoto(s).catch(() => null)));
+  render();
+}
+
+// ---- controls -------------------------------------------------------------
+
+function buildButtons(el, items, current, onPick) {
+  el.innerHTML = '';
+  for (const item of items) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + (item.id === current ? ' active' : '');
+    b.textContent = item.name;
+    b.addEventListener('click', () => {
+      onPick(item.id);
+      buildButtons(el, items, item.id, onPick);
+      render();
+    });
+    el.appendChild(b);
+  }
+}
+
+function syncCropControls() {
+  const panel = state.panels[selected];
+  if (!panel) return;
+  document.getElementById('zoom').value = panel.zoom;
+  document.getElementById('panx').value = panel.ox;
+  document.getElementById('pany').value = panel.oy;
+  document.getElementById('zoomVal').textContent = `${panel.zoom.toFixed(2)}×`;
+  document.getElementById('panxVal').textContent = panel.ox.toFixed(2);
+  document.getElementById('panyVal').textContent = panel.oy.toFixed(2);
+}
+
+function selectPanel(i) {
+  selected = Math.max(0, Math.min(i, visiblePanels() - 1));
+  document.querySelectorAll('#panelTabs .chip').forEach((b, j) => {
+    b.classList.toggle('active', j === selected);
+  });
+  syncCropControls();
+  render();
+}
+
+function buildPanelTabs() {
+  const tabs = document.getElementById('panelTabs');
+  tabs.innerHTML = '';
+  for (let i = 0; i < visiblePanels(); i++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + (i === selected ? ' active' : '');
+    b.textContent = `Panel ${i + 1}`;
+    b.addEventListener('click', () => selectPanel(i));
+    tabs.appendChild(b);
+  }
+}
+
+// Layout + grade pickers.
+buildButtons(document.getElementById('layoutBtns'), LAYOUTS, state.layout, (id) => {
   state.layout = id;
-  state.selectedPanel = 0;
-  renderThumbs();
+  if (selected >= visiblePanels()) selected = 0;
+  buildPanelTabs();
+  selectPanel(selected);
 });
-buildPicker(document.getElementById('grades'), GRADES, state.grade, (id) => {
+buildButtons(document.getElementById('gradeBtns'), GRADES, state.grade, (id) => {
   state.grade = id;
 });
 
-/** Copies the selected panel's zoom and pan into the sliders and the panel label. */
-export function syncPanelControls() {
-  const panels = currentPanels();
-  const panel = panels[state.selectedPanel] ?? panels[0];
-  const count = panels.length;
-  panelLabel.textContent = `Panel ${state.selectedPanel + 1} of ${count} — photo “${state.photoNames[panel.photo] ?? 'none'}”`;
-  const zoom = document.getElementById('zoom');
-  const panX = document.getElementById('pan-x');
-  const panY = document.getElementById('pan-y');
-  zoom.value = panel.zoom;
-  panX.value = panel.ox;
-  panY.value = panel.oy;
-  document.getElementById('zoom-out').textContent = `${panel.zoom.toFixed(2)}×`;
-  document.getElementById('pan-x-out').textContent = panel.ox.toFixed(2);
-  document.getElementById('pan-y-out').textContent = panel.oy.toFixed(2);
-}
+// Crop presets for the selected panel.
+buildButtons(
+  document.getElementById('presetBtns'),
+  Object.entries(PRESETS).map(([id, p]) => ({ id, name: p.name })),
+  '',
+  (id) => {
+    const panel = state.panels[selected];
+    if (!panel) return;
+    Object.assign(panel, PRESETS[id]);
+    syncCropControls();
+    render();
+  },
+);
 
-function bindSlider(id, apply) {
-  document.getElementById(id).addEventListener('input', (e) => {
-    apply(Number(e.target.value));
-    redraw();
-  });
-}
-bindSlider('zoom', (v) => { currentPanels()[state.selectedPanel].zoom = v; });
-bindSlider('pan-x', (v) => { currentPanels()[state.selectedPanel].ox = v; });
-bindSlider('pan-y', (v) => { currentPanels()[state.selectedPanel].oy = v; });
-
-document.getElementById('center-photo').addEventListener('click', () => {
-  const panel = currentPanels()[state.selectedPanel];
-  panel.zoom = 1;
-  panel.ox = 0;
-  panel.oy = 0;
-  redraw();
+// Sliders: zoom 1–2.2, pan ±0.9 — wide enough to pull a face into a 2:1 panel.
+document.getElementById('zoom').addEventListener('input', (e) => {
+  state.panels[selected].zoom = parseFloat(e.target.value);
+  syncCropControls();
+  render();
 });
-document.getElementById('cycle-photo').addEventListener('click', () => {
-  const panel = currentPanels()[state.selectedPanel];
-  if (state.photos.length > 1) {
-    panel.photo = (panel.photo + 1) % state.photos.length;
-    renderThumbs();
-    redraw();
-  }
+document.getElementById('panx').addEventListener('input', (e) => {
+  state.panels[selected].ox = parseFloat(e.target.value);
+  syncCropControls();
+  render();
+});
+document.getElementById('pany').addEventListener('input', (e) => {
+  state.panels[selected].oy = parseFloat(e.target.value);
+  syncCropControls();
+  render();
 });
 
-/** One-tap crop presets for the selected panel: Face pans up toward a face in a
- *  wide panel (a portrait photo's face sits near its top, so a wide panel needs a
- *  large upward pan to show it), Detail turns the panel into a close-up, Wide
- *  resets the crop. */
-const CROP_PRESETS = {
-  'crop-face': { zoom: 1.15, ox: 0, oy: 0.7 },
-  'crop-detail': { zoom: 2.0, ox: 0, oy: -0.05 },
-  'crop-wide': { zoom: 1, ox: 0, oy: 0 },
-};
-for (const [id, preset] of Object.entries(CROP_PRESETS)) {
-  document.getElementById(id).addEventListener('click', () => {
-    const panel = currentPanels()[state.selectedPanel];
-    panel.zoom = preset.zoom;
-    panel.ox = preset.ox;
-    panel.oy = preset.oy;
-    redraw();
-  });
-}
-
-document.getElementById('use-everywhere').addEventListener('click', () => {
-  const photo = currentPanels()[state.selectedPanel].photo;
-  for (const panel of currentPanels()) panel.photo = photo;
-  renderThumbs();
-  redraw();
-});
-document.getElementById('try-samples').addEventListener('click', async () => {
-  await loadSample('pier');
-  await loadSample('boulevard');
-  status.textContent = 'Samples loaded — replace them with your own photos any time.';
+// Caption.
+const captionInput = document.getElementById('caption');
+captionInput.value = state.title;
+captionInput.addEventListener('input', () => {
+  state.title = captionInput.value.toUpperCase() || 'SUNSET HEIST';
+  render();
 });
 
-document.getElementById('photo').addEventListener('change', async (e) => {
-  const files = [...e.target.files];
-  for (const file of files) {
-    const url = URL.createObjectURL(file);
-    try {
-      addPhoto(await loadImage(url), file.name);
-    } catch {
-      status.textContent = `Could not read ${file.name}.`;
-    }
-  }
-  if (files.length) status.textContent = `${files.length} photo${files.length > 1 ? 's' : ''} loaded — kept on this machine.`;
-  e.target.value = '';
+// Photo sources for the selected panel.
+document.getElementById('usePier').addEventListener('click', async () => {
+  state.panels[selected].src = 'pier';
+  await renderWhenReady();
 });
-titleInput.addEventListener('input', () => { state.title = titleInput.value; redraw(); });
-subtitleInput.addEventListener('input', () => { state.subtitle = subtitleInput.value; redraw(); });
+document.getElementById('useBoulevard').addEventListener('click', async () => {
+  state.panels[selected].src = 'boulevard';
+  await renderWhenReady();
+});
+const fileInput = document.getElementById('upload');
+document.getElementById('uploadBtn').addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files && fileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const key = String(reader.result);
+    state.panels[selected].src = key;
+    await loadPhoto(key).catch(() => null);
+    render();
+  };
+  reader.readAsDataURL(file);
+});
 
-/** Renders the cover at full export size and returns its PNG as a data URL. */
-export async function exportPng(sizeId) {
-  const size = SIZES[sizeId];
-  const off = document.createElement('canvas');
-  off.width = size.w;
-  off.height = size.h;
-  drawCover(off, {
-    photos: state.photos,
-    panels: currentPanels(),
-    layout: state.layout,
-    grade: state.grade,
-    title: state.title,
-    subtitle: state.subtitle,
-  });
-  const blob = await new Promise((resolve) => off.toBlob(resolve, 'image/png'));
-  return { blob, name: `vice-cover-${size.w}x${size.h}.png` };
-}
-
-function wireExport(buttonId, sizeId) {
-  document.getElementById(buttonId).addEventListener('click', async () => {
-    state.size = sizeId;
-    redraw();
-    const { blob, name } = await exportPng(sizeId);
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 60_000);
-    status.textContent = `Saved ${name} (${(blob.size / 1024).toFixed(0)} KiB).`;
-  });
-}
-wireExport('export-square', '1080x1080');
-wireExport('export-portrait', '1080x1350');
-wireExport('export-wide', '1920x1080');
-
-// Drag to pan the selected panel's photo, scroll to zoom it, click to select a panel.
-let dragging = null;
+// Click a panel to select it; drag it to pan the photo inside the frame.
 function canvasPoint(e) {
-  const rect = canvas.getBoundingClientRect();
+  const r = canvas.getBoundingClientRect();
   return {
-    x: ((e.clientX - rect.left) / rect.width) * canvas.width,
-    y: ((e.clientY - rect.top) / rect.height) * canvas.height,
+    x: ((e.clientX - r.left) / r.width) * canvas.width,
+    y: ((e.clientY - r.top) / r.height) * canvas.height,
   };
 }
 canvas.addEventListener('pointerdown', (e) => {
-  const { x, y } = canvasPoint(e);
-  const hit = hitPanel(state.layout, x, y, canvas.width, canvas.height);
+  if (shotMode === 'cover') return;
+  const p = canvasPoint(e);
+  const rects = layoutRects(state.layout, canvas.width, canvas.height);
+  const hit = rects.findIndex((r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h);
   if (hit >= 0) {
-    state.selectedPanel = hit;
-    renderThumbs();
-    const panel = currentPanels()[hit];
-    dragging = { x, y, ox: panel.ox, oy: panel.oy };
+    selectPanel(hit);
+    dragging = { x: p.x, y: p.y, ox: state.panels[hit].ox, oy: state.panels[hit].oy };
     canvas.setPointerCapture(e.pointerId);
-    redraw();
   }
 });
 canvas.addEventListener('pointermove', (e) => {
   if (!dragging) return;
-  const { x, y } = canvasPoint(e);
-  const rect = LAYOUTS[state.layout].panels[state.selectedPanel];
-  const panel = currentPanels()[state.selectedPanel];
-  panel.ox = Math.max(-0.9, Math.min(0.9, dragging.ox + (x - dragging.x) / (rect.w * canvas.width)));
-  panel.oy = Math.max(-0.9, Math.min(0.9, dragging.oy + (y - dragging.y) / (rect.h * canvas.height)));
-  redraw();
+  const p = canvasPoint(e);
+  const panel = state.panels[selected];
+  const rect = layoutRects(state.layout, canvas.width, canvas.height)[selected];
+  const img = images.get(panel.src);
+  if (!img || !rect) return;
+  const scale = Math.max(rect.w / img.naturalWidth, rect.h / img.naturalHeight) * panel.zoom;
+  const slackX = Math.max(0, (img.naturalWidth * scale - rect.w) / 2);
+  const slackY = Math.max(0, (img.naturalHeight * scale - rect.h) / 2);
+  if (slackX > 0) panel.ox = Math.max(-0.9, Math.min(0.9, dragging.ox + (p.x - dragging.x) / slackX));
+  if (slackY > 0) panel.oy = Math.max(-0.9, Math.min(0.9, dragging.oy + (p.y - dragging.y) / slackY));
+  syncCropControls();
+  render();
 });
-canvas.addEventListener('pointerup', () => { dragging = null; });
-canvas.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  const panel = currentPanels()[state.selectedPanel];
-  panel.zoom = Math.max(1, Math.min(3.5, panel.zoom * (e.deltaY < 0 ? 1.08 : 0.93)));
-  redraw();
-}, { passive: false });
+canvas.addEventListener('pointerup', () => {
+  dragging = null;
+});
 
-// Small handle the screenshot scenes and the verification pass use: apply a whole
-// scene at once and export the cover as a data URL without a download.
-window.__viceCover = {
-  state,
-  async applyScene(scene) {
-    if (scene.title !== undefined) { state.title = scene.title; titleInput.value = scene.title; }
-    if (scene.subtitle !== undefined) { state.subtitle = scene.subtitle; subtitleInput.value = scene.subtitle; }
-    if (scene.layout) state.layout = scene.layout;
-    if (scene.grade) state.grade = scene.grade;
-    if (scene.size) state.size = scene.size;
-    if (scene.selectedPanel !== undefined) state.selectedPanel = scene.selectedPanel;
-    if (scene.photos) {
-      for (const name of scene.photos) {
-        if (!state.photoNames.includes(name)) await loadSample(name);
-      }
-      if (scene.photoMap) {
-        const panels = currentPanels();
-        scene.photoMap.forEach((photoName, i) => {
-          const idx = state.photoNames.indexOf(photoName);
-          if (idx >= 0 && panels[i]) panels[i].photo = idx;
-        });
-      }
-      if (scene.zooms) {
-        const panels = currentPanels();
-        scene.zooms.forEach((zoom, i) => {
-          if (panels[i] && Number.isFinite(zoom)) panels[i].zoom = zoom;
-        });
-      }
-      if (scene.pans) {
-        const panels = currentPanels();
-        scene.pans.forEach((pan, i) => {
-          if (panels[i] && pan) {
-            if (Number.isFinite(pan.ox)) panels[i].ox = pan.ox;
-            if (Number.isFinite(pan.oy)) panels[i].oy = pan.oy;
-          }
-        });
-      }
-    }
-    buildPicker(document.getElementById('layouts'), LAYOUTS, state.layout, (id) => {
-      state.layout = id;
-      state.selectedPanel = 0;
-      renderThumbs();
-    });
-    buildPicker(document.getElementById('grades'), GRADES, state.grade, (id) => { state.grade = id; });
-    renderThumbs();
-    redraw();
-  },
-  async exportDataURL(sizeId) {
-    const { blob } = await exportPng(sizeId);
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.readAsDataURL(blob);
-    });
-  },
-};
-
-const query = new URLSearchParams(location.search);
-const shot = query.get('shot');
-if (shot) {
-  runShot(shot, query, window.__viceCover);
-} else {
-  loadSample('pier')
-    .then(() => loadSample('boulevard'))
-    .catch(() => {})
-    .finally(() => redraw());
-  redraw();
+// Export: one click renders the cover at full size (no editor frame) and
+// downloads the PNG straight away.
+function exportPng(size) {
+  const off = document.createElement('canvas');
+  off.width = size.w;
+  off.height = size.h;
+  drawCover(off.getContext('2d'), size.w, size.h, state, stateImages(), {});
+  off.toBlob((blob) => {
+    if (!blob) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `vice-cover-${size.w}x${size.h}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }, 'image/png');
 }
+
+const exportRow = document.getElementById('exportBtns');
+for (const size of EXPORT_SIZES) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'chip export-btn';
+  b.textContent = size.label;
+  b.addEventListener('click', () => exportPng(size));
+  exportRow.appendChild(b);
+}
+
+// ---- boot -----------------------------------------------------------------
+
+buildPanelTabs();
+selectPanel(0);
+if (shotMode === 'cover') {
+  document.body.classList.add('shot-cover');
+  window.addEventListener('resize', render);
+}
+renderWhenReady().then(() => {
+  if (shotMode) positionForShot(shotMode);
+});

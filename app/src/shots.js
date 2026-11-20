@@ -1,36 +1,70 @@
-// Fixed scenes for screenshots: ?shot=cover shows the cover alone, ?shot=editor shows
-// the full editor with a sample loaded. Query knobs: photo, photo2, title (or caption),
-// subtitle, layout, grade, size, panel (selected panel index), map (comma list of
-// sample names, one per panel), zooms (comma list, one zoom per panel) and pans
-// (comma list of x:y pairs, one pan per panel — pan up to keep a face in a wide
-// panel, zoom in for a detail crop so two panels never read as the same photo).
-// window.__shotReady is set once the scene has painted.
-export async function runShot(shot, query, api) {
-  if (shot === 'cover') document.body.classList.add('shot-cover');
-  const title = query.get('title') ?? query.get('caption') ?? 'Sunset Heist';
-  const subtitle = query.get('subtitle') ?? 'One last score';
-  const photos = [query.get('photo') ?? 'pier', query.get('photo2') ?? 'boulevard'];
-  const scene = {
-    title,
-    subtitle,
-    layout: query.get('layout') ?? 'hero-duo',
-    grade: query.get('grade') ?? 'sunset',
-    size: query.get('size') ?? '1920x1080',
-    photos,
-    selectedPanel: Number(query.get('panel') ?? (shot === 'editor' ? 1 : 0)),
+// shots.js — fixed scenes for screenshots, driven by the ?shot= query.
+// The editor reads the same params on load, so a screenshot URL always
+// reproduces the exact scene: which photo, which caption, which grade,
+// which layout. Nothing here touches the network.
+//
+//   ?shot=cover&photo=pier&caption=SUNSET%20HEIST&grade=sunset&layout=vice
+//   ?shot=editor&photo=boulevard&caption=BOULEVARD%20QUEEN&grade=neon&layout=vice
+//
+// cover mode hides the editor chrome (body gets .shot-cover) and sizes the
+// canvas to the viewport, so the shot is the exported cover itself.
+// editor mode keeps the full editor and scrolls the export card into view.
+
+export const SAMPLE_SRC = {
+  pier: 'samples/pier.jpg',
+  boulevard: 'samples/boulevard.jpg',
+};
+
+export function readShotParams() {
+  const q = new URLSearchParams(window.location.search);
+  return {
+    mode: q.get('shot') || '',
+    photo: q.get('photo') || 'pier',
+    caption: q.get('caption') || '',
+    grade: q.get('grade') || '',
+    layout: q.get('layout') || '',
   };
-  const map = query.get('map');
-  if (map) scene.photoMap = map.split(',');
-  const zooms = query.get('zooms');
-  if (zooms) scene.zooms = zooms.split(',').map((v) => Number(v));
-  const pans = query.get('pans');
-  if (pans) {
-    scene.pans = pans.split(',').map((pair) => {
-      const [x, y] = pair.split(':').map((v) => Number(v));
-      return { ox: x || 0, oy: y || 0 };
-    });
+}
+
+// Apply a shot's params to a fresh default state. The `photo` param names
+// the hero photo; the second panel gets the other sample with the Face
+// crop. The third panel always uses the boulevard photo with the Detail
+// crop — that preset is tuned for the red car door, mirror and hand, and
+// it turns any other photo into a meaningless close-up.
+export function applyShotParams(state, params) {
+  const hero = params.photo === 'boulevard' ? 'boulevard' : 'pier';
+  const other = hero === 'pier' ? 'boulevard' : 'pier';
+  if (params.caption) state.title = params.caption.toUpperCase();
+  if (params.grade) state.grade = params.grade;
+  if (params.layout) state.layout = params.layout;
+  state.panels = [
+    { src: hero, zoom: 1.15, ox: 0, oy: 0.5 },
+    { src: other, zoom: 1.15, ox: 0, oy: 0.7 },
+    { src: 'boulevard', zoom: 1.9, ox: 0.55, oy: -0.45 },
+  ];
+  return state;
+}
+
+// Default state for a normal (non-shot) visit: the Vice layout, Sunset
+// grade, pier hero on the left, boulevard face top-right, boulevard car
+// door detail bottom-right.
+export function defaultState() {
+  return {
+    title: 'SUNSET HEIST',
+    layout: 'vice',
+    grade: 'sunset',
+    panels: [
+      { src: 'pier', zoom: 1.15, ox: 0, oy: 0.5 },
+      { src: 'boulevard', zoom: 1.15, ox: 0, oy: 0.7 },
+      { src: 'boulevard', zoom: 1.9, ox: 0.55, oy: -0.45 },
+    ],
+  };
+}
+
+// After the scene is rendered, position the page for the shot. Cover mode
+// needs no scroll; editor mode scrolls so the whole export card is in view.
+export function positionForShot(mode) {
+  if (mode === 'editor') {
+    window.scrollTo(0, 460);
   }
-  await api.applyScene(scene);
-  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-  window.__shotReady = true;
 }

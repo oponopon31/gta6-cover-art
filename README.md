@@ -1,56 +1,74 @@
-# Vice Cover Studio — gta6-cover-art
+[![Make.fun](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01)
+[![Rank](https://make.fun/badge/gta6-cover-art-01/oponopon31/gta6-cover-art/rank.svg)](https://make.fun/bounty/gta6-cover-art-01)
+[![Reward](https://make.fun/badge/gta6-cover-art-01/oponopon31/gta6-cover-art/reward.svg)](https://make.fun/bounty/gta6-cover-art-01)
 
-[![make.fun · gta6-cover-art-01](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
-[![rank](https://make.fun/badge/gta6-cover-art-01/oponopon31/gta6-cover-art/rank.svg)](https://make.fun/bounty/gta6-cover-art-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
-[![reward](https://make.fun/badge/gta6-cover-art-01/oponopon31/gta6-cover-art/reward.svg)](https://make.fun/bounty/gta6-cover-art-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
+# Vice Cover Studio — GTA 6 Cover Art Maker
 
-An offline web app that turns your photos and a caption into multi-panel poster cover
-art in the style of GTA 6's posters, and exports it as a PNG to share. Built by an AI
-agent for make.fun's "Make GTA 6 Cover Art" bounty, $250 in USDC.
+Make a GTA-style multi-panel cover in about a minute, entirely in your
+browser. Pick a layout, give each panel a photo, crop it with a preset or
+by dragging, choose a colour grade, type a caption, and export a PNG.
+Your photos never leave the page — there is no server and no upload.
 
-## What it does
+[Enter the bounty on make.fun](https://make.fun/bounty/gta6-cover-art-01)
 
-- **Multi-panel poster editor** — four layouts (Hero + Duo, Triptych, Four Frames,
-  One Shot) with tilted, white-bordered panels, like a game poster.
-- **Any photo, any panel** — add photos from your machine (read locally, never
-  uploaded), put one photo in every panel or a different photo in each, and crop and
-  position each one: drag it on the canvas, scroll to zoom, use the sliders, or tap
-  a crop preset — **Face** keeps a face in a wide panel, **Detail** turns a panel
-  into a close-up, **Wide** resets the crop. The selected panel gets a dashed
-  frame in the preview so you always know which one you are editing.
-- **Editable caption** — a big outlined title with a hard offset shadow plus a
-  letterspaced subtitle, drawn in bold system fonts over a dark poster band with
-  a palm-and-skyline silhouette. The title is sized to fit its band, so the
-  lettering never runs off the cover.
-- **Colour grades** — Sunset, Neon, Gold Hour, Dusk and Noir, applied live as a
-  canvas filter plus a gradient wash and a sun glow behind the panels.
-- **One-click PNG export** — 1080 × 1080, 1080 × 1350 and 1920 × 1080, straight
-  from the canvas with `toBlob`.
-
-## Try it
+## Run it
 
 ```sh
 node serve.ts
 # open http://localhost:8080
 ```
 
-Everything under `app/` is plain static files — no build step, no network request.
-The two sample photos in `app/samples/` were made with an image model for make.fun
-and are free to use; they load automatically so the editor opens with a finished
-cover, and you can replace them with your own photos any time.
+Or open `app/index.html` straight from the folder — it is plain static
+files (ES modules, no libraries, no network requests).
 
-## Hand in
+## What it does
+
+- **Multi-panel covers** — three layouts (Vice, Trio, Duo). Every panel
+  has its own explicit crop, so no two panels show the same framing.
+- **Crop and position** — presets Face / Detail / Wide, zoom and pan
+  sliders (±0.9, wide enough to pull a face into a 2:1 panel), or drag
+  the photo inside the frame. Click a panel to select it.
+- **Five colour grades** — Sunset, Neon, Palm, Vice, and the new Dusk
+  (indigo sky melting into orange), each with its own sky, sun glow and
+  photo tint.
+- **Bold lettering that never clips** — the title size is bounded by the
+  band's width *and* height, with a hard shadow and a thick outline, on
+  a baseline at 0.945 of the cover height. The studio credit sits below
+  it, clear of every frame.
+- **Sunset world around the panels** — glowing sun, a skyline with lit
+  windows, and palm silhouettes framing the cover.
+- **One-click PNG export** — 1080×1080, 1080×1350, or 1920×1080. One
+  click — the PNG downloads at once.
+- **100% offline · no upload** — photos are read with FileReader and
+  stay in the browser. Two sample photos ship in `app/samples/`.
+
+## Build the hand-in
 
 ```sh
 mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 ```
 
-`main.ts` copies `app/` and `screenshots/` to the output directory and writes
-`dossier.json` with the vendored make.fun library, then prints a short verification
-summary (dossier bytes and every screenshot's size). The screenshots in
-`screenshots/` are captures of the app itself: the first is the exported cover,
-the second the editor with a photo loaded, the third and fourth the cover in
-portrait and square.
+That copies `app/` and `screenshots/` to `out/` and writes
+`out/dossier.json`, the summary the judge reads.
 
-All artwork, lettering and code are original — no Rockstar logo, artwork or font
-is used anywhere.
+## Screenshots
+
+| File | Scene |
+| --- | --- |
+| `screenshots/1-cover.jpg` | Best exported cover, landscape (Sunset, Vice layout) |
+| `screenshots/2-editor.jpg` | The editor with a photo loaded, export card visible |
+| `screenshots/3-cover-portrait.jpg` | Portrait cover, neon Trio layout |
+| `screenshots/4-cover-square.jpg` | Square cover, Dusk grade, Duo layout |
+
+## Files
+
+- `app/index.html` — editor page
+- `app/style.css` — sunset / neon theme
+- `app/src/cover.js` — pure canvas renderer (sky, panels, title)
+- `app/src/main.js` — editor wiring (controls, drag, export)
+- `app/src/shots.js` — fixed screenshot scenes from `?shot=`
+- `shots.json` — the four screenshot scenes and sizes
+- `main.ts` — builds `dossier.json` for the grader
+
+No Rockstar logos, wordmarks, artwork or fonts are used anywhere —
+the lettering is a system font stack with outline and shadow.
